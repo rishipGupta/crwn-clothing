@@ -5,7 +5,7 @@ import HomePage from './pages/HomePage/HomePage';
 import ShopPage from './pages/ShopPage/ShopPage';
 import Header from './components/Header/Header';
 import SignInAndSignUp from './pages/SignInAndSignUpPage/SignInAndSignUp';
-import { auth } from './firebase/firebaseUtils';
+import { auth, createUserProfileDocument } from './firebase/firebaseUtils';
 class App extends React.Component {
   constructor() {
     super();
@@ -26,9 +26,25 @@ class App extends React.Component {
 
     //auth.onAuthStateChanged() is like an open subscription/open messaging system beween firebase and our app
     //when ever any change occur on firebase from any source related to this application, firebase sends out a message that the auth state is changed that the user state is updated and then it will call it following userState automatically.
-    this.unsubscribeFromAuth = auth.onAuthStateChanged((userState) => {
-      this.setState({ currentUser: userState });
-      console.log(userState);
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async (userAuth) => {
+      // this.setState({ currentUser: userState });
+
+      if (userAuth) {
+        const userRef = await createUserProfileDocument(userAuth);
+
+        await userRef.onSnapshot((snapshot) => {
+          // snapshot.data() is a method that return the data of the user.
+          // console.log('snapshot', snapshot.data());
+          this.setState({
+            currentUser: {
+              id: snapshot.id,
+              ...snapshot.data(),
+            },
+          });
+          console.log('state....', this.state);
+        });
+      }
+      this.setState({ currentUser: userAuth });
     });
   }
 
